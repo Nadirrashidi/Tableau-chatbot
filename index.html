@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PlatShift Tabelu Chatbot</title>
+
+<style>
+/* =========================
+   GLOBAL
+========================= */
+html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: "Segoe UI", sans-serif;
+    background: #f4f6f9;
+}
+
+/* =========================
+   CHAT CARD (FIXED BOX)
+========================= */
+.chat-container {
+    width: 90%;
+    max-width: 1100px;
+    height: 620px;                 /* ✅ FIXED CARD HEIGHT */
+    margin: 40px auto;
+    background: #ffffff;
+    border-radius: 14px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* =========================
+   HEADER
+========================= */
+.chat-header {
+    padding: 20px;
+    font-size: 26px;
+    font-weight: 700;
+    text-align: center;
+    color: #1f3b57;
+    border-bottom: 1px solid #ddd;
+}
+
+/* =========================
+   CHAT BODY (SCROLLABLE)
+========================= */
+.chat-box {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    background: #ffffff;
+}
+
+/* =========================
+   USER MESSAGE
+========================= */
+.message.user {
+    max-width: 70%;
+    padding: 16px 22px;
+    margin-bottom: 14px;
+    border-radius: 14px;
+    background: #1f3b57;
+    color: #ffffff;
+    margin-left: auto;
+    font-size: 18px;
+    line-height: 1.5;
+}
+
+/* =========================
+   BOT MESSAGE
+========================= */
+.bot-wrapper {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 14px;
+    align-items: flex-start;
+}
+
+.bot-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: #1f7aff;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.message.bot {
+    max-width: 70%;
+    padding: 16px 22px;
+    border-radius: 14px;
+    background: #eef3f9;
+    color: #000000;
+    font-size: 18px;
+    line-height: 1.5;
+}
+
+/* =========================
+   INPUT AREA (FIXED BOTTOM)
+========================= */
+.chat-input {
+    padding: 14px;
+    border-top: 1px solid #ddd;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    background: #ffffff;
+}
+
+.chat-input input {
+    flex: 1;
+    padding: 14px 18px;
+    font-size: 18px;
+    height: 52px;
+    border-radius: 10px;
+    border: 1px solid #bbb;
+    outline: none;
+}
+
+/* =========================
+   BUTTONS
+========================= */
+.icon-btn {
+    width: 52px;
+    height: 52px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 22px;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.send-btn { background: #1f7aff; }
+.clear-btn { background: #ff4d4d; }
+</style>
+</head>
+
+<body>
+
+<div class="chat-container">
+    <div class="chat-header">PlatShift Tabelu Chatbot</div>
+    <div class="chat-box" id="chatBox"></div>
+
+    <div class="chat-input">
+        <input type="text" id="userInput" placeholder="Ask something..." />
+        <button class="icon-btn send-btn" onclick="sendMessage()">➤</button>
+        <button class="icon-btn clear-btn" onclick="clearChat()">✖</button>
+    </div>
+</div>
+
+<script>
+/* DASHBOARD DATA */
+const DASHBOARD_DATA = {
+    no_of_workspaces: 1,
+    no_of_datasources: 10,
+    no_of_reports_workspace: 11,
+    no_of_tables: 8,
+    no_of_relationships: 134,
+    no_of_columns: 167,
+    no_of_report_pages: 46,
+    no_of_visual_containers: 46,
+    no_of_files: 11,
+    no_of_reports_v3: 3, 
+    no_of_repeated_columns: 6,
+    column_used_in_containers: 6,
+    used_columns: 6,
+    unused_columns: 6,
+    no_of_measures: 18,
+    no_of_functions: 18,
+    total_workspaces_v2: 1,
+    total_tables_v2: 95,
+    total_datasources_v2: 45,
+    total_visual_containers_v2: 1610,
+    total_reports_v2: 5,
+    total_columns_v2: 0,
+    total_parameters: 7,
+    total_dashboards:5,
+    total_sets: 8,
+    total_dashboard_actions: 9,
+    total_set_actions: 2,
+    total_story_points: 2
+};
+
+/* METRICS CONFIG */
+const METRICS = [
+    { 
+        label: "workspaces", 
+        dataKey: "no_of_workspaces", 
+        keywords: ["workspace", "workspaces"] 
+    },
+    { 
+        label: "datasources", 
+        dataKey: "no_of_datasources", 
+        keywords: ["datasource", "datasources", "data source", "data sources"]
+     },
+    { 
+        label: "reports", 
+        dataKey: "no_of_reports_workspace", 
+        keywords: ["report", "reports"] 
+    },
+    { 
+        label: "tables", 
+        dataKey: "no_of_tables", 
+        keywords: ["table", "tables"] 
+    },
+    { 
+        label: "relationships",
+         dataKey: "no_of_relationships", 
+         keywords: ["relationship", "relationships"] 
+        },
+    { 
+        label: "columns", 
+        dataKey: "no_of_columns", 
+        keywords: ["column", "columns"] 
+    },
+    { 
+        label: "report pages", 
+        dataKey: "no_of_report_pages", 
+        keywords: ["report page", "report pages"]
+     },
+    { 
+        label: "visual containers", 
+        dataKey: "no_of_visual_containers", 
+        keywords: ["container", "containers", "visual container"] 
+    },
+    { 
+        label: "files", 
+        dataKey: "no_of_files",
+        keywords: ["file", "files"]
+    },
+    { 
+        label: "report pages", 
+        dataKey: "no_of_report_pages", 
+        keywords: ["report page", "report pages", "pages count"] 
+    },
+    { 
+        label: "visual containers", 
+        dataKey: "no_of_visual_containers", 
+        keywords: ["visual containers", "containers", "container count"] 
+    },
+    { 
+        label: "files", 
+        dataKey: "no_of_files", 
+        keywords: ["files", "file count", "total files"] 
+    },
+
+   
+    { 
+        label: "repeated columns", 
+        dataKey: "no_of_repeated_columns", 
+        keywords: ["repeated column", "repeated columns", "duplicate columns"] 
+    },
+    { 
+        label: "columns used in containers", 
+        dataKey: "column_used_in_containers", 
+        keywords: ["columns in containers", "container columns"] 
+    },
+    { 
+        label: "used columns", 
+        dataKey: "used_columns", 
+        keywords: ["used column", "used columns"] 
+    },
+    { 
+        label: "unused columns", 
+        dataKey: "unused_columns", 
+        keywords: ["unused column", "unused columns"] 
+    },
+    { 
+        label: "measures", 
+        dataKey: "no_of_measures", 
+        keywords: ["measures", "measure count"] 
+    },
+    { 
+        label: "functions", 
+        dataKey: "no_of_functions", 
+        keywords: ["functions", "function count"] 
+    },
+    { 
+        label: "expanded tables", 
+        dataKey: "total_tables_v2", 
+        keywords: ["total tables", "architecture tables"] 
+    },
+    { 
+        label: "expanded containers", 
+        dataKey: "total_visual_containers_v2", 
+        keywords: ["total containers", "all containers"] 
+    },
+    { 
+        label: "expanded datasources", 
+        dataKey: "total_datasources_v2", 
+        keywords: ["total datasources", "all datasources"] 
+    },
+    { 
+        label: "parameters", 
+        dataKey: "total_parameters", 
+        keywords: ["parameter", "parameters", "total parameter"] 
+    },
+     { 
+        label: "dashboard", 
+        dataKey: "total_dashboards", 
+        keywords: ["dashboard", "dashboards", "total dashboard"] 
+    },
+    { 
+        label: "set", 
+        dataKey: "total_sets", 
+        keywords: ["set", "sets", "total set"] 
+    },
+    { 
+        label: "dashboard actions", 
+        dataKey: "total_dashboard_actions", 
+        keywords: ["dashboard action", "dashboard actions", "actions count"] 
+    },
+    { 
+        label: "set actions", 
+        dataKey: "total_set_actions", 
+        keywords: ["set action", "set actions"] 
+    },
+    { 
+        label: "story points", 
+        dataKey: "total_story_points", 
+        keywords: ["story point", "story points", "total story points"] 
+    }
+];
+
+/* UTILITIES */
+function normalize(text) {
+    return text.toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function findMetric(input) {
+    const cleanText = normalize(input);
+
+    // Sort keywords by length (desc) to avoid partial matches
+    const sortedMetrics = [...METRICS].sort((a, b) => {
+        const maxA = Math.max(...a.keywords.map(k => k.length));
+        const maxB = Math.max(...b.keywords.map(k => k.length));
+        return maxB - maxA;
+    });
+
+    for (const metric of sortedMetrics) {
+        for (const keyword of metric.keywords) {
+            const pattern = new RegExp(`\\b${keyword}\\b`, "i");
+            if (pattern.test(cleanText)) return metric;
+        }
+    }
+    return null;
+}
+
+function getBotReply(input){
+    const metric = findMetric(normalize(input));
+    if(!metric) return "Please ask about correct metrics";
+    return `There are <b>${DASHBOARD_DATA[metric.dataKey]}</b> ${metric.label}.`;
+}
+
+/* UI FUNCTIONS */
+const chatBox = document.getElementById("chatBox");
+const userInput = document.getElementById("userInput");
+
+function addUser(text) {
+    const div = document.createElement("div");
+    div.className = "message user";
+    div.innerText = text;
+    chatBox.appendChild(div);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function addBotThinking() {
+    const wrap = document.createElement("div");
+    wrap.className = "bot-wrapper";
+
+    const avatar = document.createElement("div");
+    avatar.className = "bot-avatar";
+    avatar.innerText = "🤖";
+
+    const msg = document.createElement("div");
+    msg.className = "message bot thinking";
+    msg.innerHTML = "Thinking<span class='dots'></span>";
+
+    wrap.appendChild(avatar);
+    wrap.appendChild(msg);
+    chatBox.appendChild(wrap);
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    return msg;
+}
+
+function sendMessage() {
+    const text = userInput.value.trim();
+    if (!text) return;
+
+    addUser(text);
+    userInput.value = "";
+
+    const thinkingMsg = addBotThinking();
+
+    setTimeout(() => {
+        thinkingMsg.classList.remove("thinking");
+        thinkingMsg.innerHTML = getBotReply(text);
+    }, 600);
+}
+
+function clearChat() {
+    chatBox.innerHTML = "";
+}
+
+userInput.addEventListener("keypress", e => {
+    if (e.key === "Enter") sendMessage();
+});
+</script>
+
+</body>
+</html>
